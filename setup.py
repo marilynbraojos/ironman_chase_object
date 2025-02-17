@@ -20,9 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'object_detection_node=ironman_object_follower.object_detection_node:main',
-            'view_image_raw=ironman_object_follower.view_image_raw:main',
-            'velocity_controller=ironman_object_follower.velocity_controller:main',
+            'object_detection_node=ironman_chase_object.object_detection_node:main',
+            'view_image_raw=ironman_chase_object.view_image_raw:main',
+            'velocity_controller=ironman_chase_object.velocity_controller:main',
         ],
     },
 )
