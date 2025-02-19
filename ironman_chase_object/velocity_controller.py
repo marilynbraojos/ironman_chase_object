@@ -27,17 +27,26 @@ class VelocityController(Node):
         
         self._vel_publish = self.create_publisher(Twist, '/cmd_vel', 10)
 
-     def pixel_callback(self, msg: Point):
 
+        self.Kp = 0.005  proportional gain 
+        self.max_angular_speed = 1.0 
+
+     def pixel_callback(self, msg: Point):
+        pix_error = msg.x - msg.y
         twist = Twist()
         twist.linear.x = 0.0
 
-        if msg.x < msg.y - 50:
-            twist.angular.z = 0.5
-        elif msg.x > msg.y + 50:
-            twist.angular.z = -0.5
-        else:
-            twist.angular.z = 0.0
+        twist.angular.z = self.Kp * pix_error
+
+        twist.angular.z = max(min(twist.angular.z, self.max_angular_speed), -self.max_angular_speed)
+
+
+        # if msg.x < msg.y - 50:
+        #     twist.angular.z = 0.5
+        # elif msg.x > msg.y + 50:
+        #     twist.angular.z = -0.5
+        # else:
+        #     twist.angular.z = 0.0
             
         self._vel_publish.publish(twist)
 
