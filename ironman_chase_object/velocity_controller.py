@@ -30,6 +30,8 @@ class VelocityController(Node):
 
         self.Kp = 0.005  # proportional gain 
         self.max_angular_speed = 1.0 
+        self.dead_zone = 10  # Pixels within which we don't rotate
+
 
      def pixel_callback(self, msg: Point):
         pix_error = msg.x - msg.y
@@ -40,12 +42,18 @@ class VelocityController(Node):
 
         # twist.angular.z = max(min(twist.angular.z, self.max_angular_speed), -self.max_angular_speed)
 
-        if msg.x < msg.y - 40:
-            twist.angular.z = self.Kp * pix_error
-        elif msg.x > msg.y + 40:
-            twist.angular.z = self.Kp * pix_error
+        # if msg.x < msg.y - 40:
+        #     twist.angular.z = self.Kp * pix_error
+        # elif msg.x > msg.y + 40:
+        #     twist.angular.z = self.Kp * pix_error
+        # else:
+        #     twist.angular.z = 0.0
+
+        if abs(pix_error) > self.dead_zone:  # Ignore small errors
+            twist.angular.z = -self.Kp * pix_error
+            twist.angular.z = max(min(twist.angular.z, self.max_angular_speed), -self.max_angular_speed)
         else:
-            twist.angular.z = 0.0
+            twist.angular.z = 0.0  # Stop rotation if error is small
             
         self._vel_publish.publish(twist)
 
