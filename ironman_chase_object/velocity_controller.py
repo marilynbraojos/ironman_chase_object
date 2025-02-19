@@ -28,7 +28,7 @@ class VelocityController(Node):
         self._vel_publish = self.create_publisher(Twist, '/cmd_vel', 10)
 
 
-        self.Kp = 0.005  proportional gain 
+        self.Kp = 0.005  # proportional gain 
         self.max_angular_speed = 1.0 
 
      def pixel_callback(self, msg: Point):
