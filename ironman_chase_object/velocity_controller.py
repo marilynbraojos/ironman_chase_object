@@ -43,7 +43,7 @@ class VelocityController(Node):
         if msg.x < msg.y - 40:
             twist.angular.z = self.Kp * pix_error
         elif msg.x > msg.y + 40:
-            twist.angular.z = -self.Kp * pix_error
+            twist.angular.z = self.Kp * pix_error
         else:
             twist.angular.z = 0.0
             
