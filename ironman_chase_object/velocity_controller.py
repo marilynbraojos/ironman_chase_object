@@ -15,7 +15,7 @@ import sys
 
 
 class VelocityController(Node):
-     def __init__(self):        
+    def __init__(self):        
         super().__init__('velocity_publisher')
 
         self._pixel_subscriber = self.create_subscription(
@@ -38,7 +38,7 @@ class VelocityController(Node):
         self.timer = self.create_timer(0.5, self.check_timeout)
 
 
-     def pixel_callback(self, msg: Point):
+    def pixel_callback(self, msg: Point):
         self.last_msg_time = self.get_clock().now()  # Update last received message time
 
         pix_error = msg.x - msg.y
@@ -52,8 +52,8 @@ class VelocityController(Node):
             twist.angular.z = 0.0  # stop rotation if error is small
             
         self._vel_publish.publish(twist)
-
-    def check_timeout(self):
+        
+    def check_timeout(self): 
         """ Stop rotation if no new message is received for `timeout_duration` seconds. """
         time_since_last_msg = (self.get_clock().now() - self.last_msg_time).nanoseconds / 1e9  # Convert to seconds
         if time_since_last_msg > self.timeout_duration:
