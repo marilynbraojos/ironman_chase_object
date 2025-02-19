@@ -36,17 +36,16 @@ class VelocityController(Node):
         twist = Twist()
         twist.linear.x = 0.0
 
-        twist.angular.z = self.Kp * pix_error
+        # twist.angular.z = -self.Kp * pix_error
 
-        twist.angular.z = max(min(twist.angular.z, self.max_angular_speed), -self.max_angular_speed)
-
-
-        # if msg.x < msg.y - 50:
-        #     twist.angular.z = 0.5
-        # elif msg.x > msg.y + 50:
-        #     twist.angular.z = -0.5
-        # else:
-        #     twist.angular.z = 0.0
+        # twist.angular.z = max(min(twist.angular.z, self.max_angular_speed), -self.max_angular_speed)
+        
+        if msg.x < msg.y - 50:
+            twist.angular.z = self.Kp * pix_error
+        elif msg.x > msg.y + 50:
+            twist.angular.z = -self.Kp * pix_error
+        else:
+            twist.angular.z = 0.0
             
         self._vel_publish.publish(twist)
 
