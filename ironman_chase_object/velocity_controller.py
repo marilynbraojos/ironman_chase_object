@@ -24,6 +24,15 @@ class VelocityController(Node):
             self.pixel_callback, 
             10)
         self._pixel_subscriber 
+
+        # range subscriber
+        self._range_subscriber = self.create_subscription(
+            Point,
+            'object_range',
+            self.pixel_callback, 
+            10)
+        self._range_subscriber 
+
         
         self._vel_publish = self.create_publisher(Twist, '/cmd_vel', 10)
 
