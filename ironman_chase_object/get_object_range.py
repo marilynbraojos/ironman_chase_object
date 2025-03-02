@@ -88,7 +88,7 @@ class GetObjectRangeNode(Node):
         out_msg.y = distance
         out_msg.z = 0.0
 
-        self.object_distance_pub.publish(out_msg)
+        self._point_publish.publish(out_msg)
 
 def main():
     rclpy.init()
