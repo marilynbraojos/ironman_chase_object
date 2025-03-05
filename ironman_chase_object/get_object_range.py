@@ -1,6 +1,3 @@
-# Marilyn Braojos 
-# Mariam Misabishvili
-
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy
@@ -19,10 +16,9 @@ class GetObjectRangeNode(Node):
     def __init__(self):        
         super().__init__('get_object_range_node')
 
-
         # Declare parameters for camera properties
         self.declare_parameter('camera_fov_deg', 60.0)  # Horizontal field of view in degrees
-        self.declare_parameter('image_width', 640)      # Image width in pixels
+        self.declare_parameter('image_width', 640)        # Image width in pixels
 
         # Fetch parameter values
         self.camera_fov_deg = self.get_parameter('camera_fov_deg').value
@@ -31,10 +27,10 @@ class GetObjectRangeNode(Node):
         # Calculate how many degrees each pixel represents (very rough approximation)
         self.angle_per_pixel = self.camera_fov_deg / float(self.image_width)
 
-
-
-        self.object_x = None
-        self.center_img = None
+        # Variables to store pixel and width information
+        self.object_x = None         # Object center x in pixels
+        self.center_img = None       # Image center in pixels
+        self.object_width = None     # Object width (in pixels or other unit)
 
         lidar_qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
@@ -59,20 +55,20 @@ class GetObjectRangeNode(Node):
         
         self._point_publish = self.create_publisher(Point, 'object_range', 10)
 
-
     def _pixel_callback(self, msg: Point):
-        self.object_x = msg.x # object center in pixels
-        self.center_img = msg.y # img center in pixels
+        # Capture the object center and width from the message.
+        self.object_x = msg.x          # object center in pixels
+        self.center_img = msg.y        # image center in pixels
+        self.object_width = msg.z      # object width 
 
     def _image_callback(self, scan_msg: LaserScan):    
-        if self.object_x is None: 
+        if self.object_x is None or self.center_img is None:
             return 
         
         pix_error = self.object_x - self.center_img
 
-        # angular offset (if time: change angles - sean rec not use angles)
+        # Calculate the angular offset in degrees.
         angle_deg = pix_error * self.angle_per_pixel
-
         angle_deg_normalized = angle_deg % 360.0
         index = int(angle_deg_normalized)
 
@@ -82,11 +78,11 @@ class GetObjectRangeNode(Node):
         else:
             distance = float('inf')
 
-        #    Use geometry_msgs/Point where:
+        # Create an output message with angle, distance, and width.
         out_msg = Point()
         out_msg.x = math.radians(angle_deg_normalized)  # angle in radians
-        out_msg.y = distance
-        out_msg.z = 0.0
+        out_msg.y = distance                            # lidar-measured distance
+        out_msg.z = self.object_width if self.object_width is not None else 0.0  # object width
 
         self._point_publish.publish(out_msg)
 
