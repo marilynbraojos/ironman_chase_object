@@ -11,74 +11,79 @@ from geometry_msgs.msg import Twist, Point
 import cv2
 from cv_bridge import CvBridge
 import numpy as np
-import sys
 
+class ObjectDetectionNode(Node):
 
-class VelocityController(Node):
     def __init__(self):        
-        super().__init__('velocity_publisher')
-
-        self._pixel_subscriber = self.create_subscription(
-            Point,
-            'detected_pixel',
-            self.pixel_callback, 
-            10)
-        self._pixel_subscriber 
-
-        # range subscriber
-        self._range_subscriber = self.create_subscription(
-            Point,
-            'object_range',
-            self.pixel_callback, 
-            10)
-        self._range_subscriber 
-
+        super().__init__('object_detection_node')
         
-        self._vel_publish = self.create_publisher(Twist, '/cmd_vel', 10)
+        image_qos_profile = QoSProfile(
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            durability=QoSDurabilityPolicy.VOLATILE,
+            depth=1
+        )
+
+        self._video_subscriber = self.create_subscription(
+            CompressedImage,
+            '/image_raw/compressed',
+            self._image_callback, 
+            image_qos_profile)
+        self._video_subscriber 
+        
+        self._point_publish = self.create_publisher(Point, 'detected_pixel', 10)
+
+    def _image_callback(self, CompressedImage):    
+        self._imgBGR = CvBridge().compressed_imgmsg_to_cv2(CompressedImage, "bgr8")
+        pixel_coordinates = self.find_object(self._imgBGR)
+
+        if pixel_coordinates is not None: 
+            cx, image_center_x = pixel_coordinates
+            point_msg = Point()
+            point_msg.x = float(cx)
+            point_msg.y = float(image_center_x)
+            point_msg.z = 0.0
+
+            self._point_publish.publish(point_msg)
+            self.get_logger().info(f"Published pixel center {cx} and frame center {image_center_x}")
 
 
-        self.Kp = 0.005  # proportional gain 
-        self.max_angular_speed = 1.0 
-        self.dead_zone = 10  # Pixels within which we don't rotate
+    def find_object(self, frame):
+        lower_color = np.array([40, 75, 75]) # green objects
+        upper_color = np.array([80, 255, 255]) # green objects
 
+        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        bin_mask = cv2.inRange(hsv_frame, lower_color, upper_color)
 
-        self.last_msg_time = self.get_clock().now()  # Track last received message
-        self.timeout_duration = 1.0  # Time (in seconds) before stopping motion
-        self.timer = self.create_timer(0.5, self.check_timeout)
+        contours, _ = cv2.findContours(bin_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-
-    def pixel_callback(self, msg: Point):
-        self.last_msg_time = self.get_clock().now()  # Update last received message time
-
-        pix_error = msg.x - msg.y
-        twist = Twist()
-        twist.linear.x = 0.0
-
-        if abs(pix_error) > self.dead_zone:  # ignore small errors
-            twist.angular.z = -self.Kp * pix_error
-            twist.angular.z = max(min(twist.angular.z, self.max_angular_speed), -self.max_angular_speed)
-        else:
-            twist.angular.z = 0.0  # stop rotation if error is small
+        for contour in contours:
+            area = cv2.contourArea(contour)
             
-        self._vel_publish.publish(twist)
-        
-    def check_timeout(self): 
-        """ Stop rotation if no new message is received for `timeout_duration` seconds. """
-        time_since_last_msg = (self.get_clock().now() - self.last_msg_time).nanoseconds / 1e9  # Convert to seconds
-        if time_since_last_msg > self.timeout_duration:
-            twist = Twist()
-            twist.angular.z = 0.0  # Stop rotation
-            self._vel_publish.publish(twist)
+            if area < 2000:
+                continue
 
+            x, y, w, h = cv2.boundingRect(contour)
+            cx, cy = x + w // 2, y + h // 2
+
+            mask_roi = bin_mask[y:y + h, x:x + w]
+            avg_intensity = np.mean(mask_roi) / 255.0
+
+            if avg_intensity < 0.35:
+                continue
+            
+            image_center_x = frame.shape[1] // 2
+
+            return cx, image_center_x
 
 def main():
     rclpy.init()
-    velocity_publisher = VelocityController()
+    video_subscriber = ObjectDetectionNode()
 
     while rclpy.ok():
-        rclpy.spin_once(velocity_publisher)
+        rclpy.spin_once(video_subscriber)
     
-    velocity_publisher.destroy_node()  
+    video_subscriber.destroy_node()  
     rclpy.shutdown()
 
 if __name__ == '__main__':
