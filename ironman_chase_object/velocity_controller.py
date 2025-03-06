@@ -81,8 +81,8 @@ class VelocityController(Node):
         distance = out_msg.y
 
         print(distance)
-        self.get_logger().info(f"Angle min: {out_msg.angle_min} rad")
-        self.get_logger().info(f"Angle max: {out_msg.angle_max} rad")
+        # self.get_logger().info(f"Angle min: {out_msg.angle_min} rad")
+        # self.get_logger().info(f"Angle max: {out_msg.angle_max} rad")
 
         
     def check_timeout(self): 
