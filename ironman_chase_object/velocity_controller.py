@@ -14,6 +14,13 @@ class VelocityController(Node):
             self.pixel_callback, 
             10)
         self._pixel_subscriber 
+
+        self.dis_subscriber = self.create_subscription(
+            Point,
+            'obj_dis',
+            self.pixel_callback, 
+            10)
+        self.dis_subscriber 
         
         # Publisher for velocity commands.
         self._vel_publish = self.create_publisher(Twist, '/cmd_vel', 10)
@@ -42,7 +49,10 @@ class VelocityController(Node):
 
         # Calculate pixel error: msg.x = detected pixel, msg.y = center pixel.
         error = msg.x - msg.y
-        
+        distance = out_msg.y
+
+        print(distance)
+
         twist = Twist()
         twist.linear.x = 0.0
 
