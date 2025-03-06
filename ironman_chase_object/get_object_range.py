@@ -80,6 +80,13 @@ class GetObjectRangeNode(Node):
         else:
             distance = float('inf')
 
+        # Optional: Try checking neighboring indices if you're worried about off-by-one errors
+        if distance == float('inf') and 0 <= index - 1 < len(scan_msg.ranges):
+            distance = scan_msg.ranges[index - 1]
+
+        if distance == float('inf') and 0 <= index + 1 < len(scan_msg.ranges):
+            distance = scan_msg.ranges[index + 1]
+
         #    Use geometry_msgs/Point where:
         out_msg = Point()
         out_msg.x = math.radians(angle_deg_normalized)  # angle in radians
