@@ -84,7 +84,7 @@ class VelocityController(Node):
 
         # Control parameters.
         self.dead_zone = 10         # Ignore small pixel errors.
-        self.max_angular_speed = 1.0  # Maximum angular velocity.
+        self.max_angular_speed = 0.5  # Maximum angular velocity.
         self.max_linear_speed = 0.5   # Maximum linear velocity.
 
         # For timeout handling.
