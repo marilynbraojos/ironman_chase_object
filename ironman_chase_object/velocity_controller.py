@@ -18,7 +18,7 @@ class VelocityController(Node):
         self.dis_subscriber = self.create_subscription(
             Point,
             'obj_dis',
-            self.pixel_callback, 
+            self.lidar_callback, 
             10)
         self.dis_subscriber 
         
@@ -49,9 +49,6 @@ class VelocityController(Node):
 
         # Calculate pixel error: msg.x = detected pixel, msg.y = center pixel.
         error = msg.x - msg.y
-        distance = out_msg.y
-
-        print(distance)
 
         twist = Twist()
         twist.linear.x = 0.0
@@ -79,6 +76,11 @@ class VelocityController(Node):
             twist.angular.z = 0.0
         
         self._vel_publish.publish(twist)
+
+    def lidar_callback(self, out_msg: Point): 
+        distance = out_msg.y
+
+        print(distance)
         
     def check_timeout(self): 
         """Stop rotation if no new message is received for `timeout_duration` seconds."""
