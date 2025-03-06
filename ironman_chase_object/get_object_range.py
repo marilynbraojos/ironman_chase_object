@@ -21,7 +21,7 @@ class GetObjectRangeNode(Node):
 
 
         # Declare parameters for camera properties
-        self.declare_parameter('camera_fov_deg', 60.0)  # Horizontal field of view in degrees
+        self.declare_parameter('camera_fov_deg', 62.2)  # Horizontal field of view in degrees
         self.declare_parameter('image_width', 640)      # Image width in pixels
 
         # Fetch parameter values
@@ -30,8 +30,6 @@ class GetObjectRangeNode(Node):
 
         # Calculate how many degrees each pixel represents (very rough approximation)
         self.angle_per_pixel = self.camera_fov_deg / float(self.image_width)
-
-
 
         self.object_x = None
         self.center_img = None
@@ -58,7 +56,7 @@ class GetObjectRangeNode(Node):
         self._lidar_subscriber 
         
         self._point_publish = self.create_publisher(Point, 'object_range', 10)
-
+        self.object_distance_pub = self.create_publisher(Point, 'obj_dis', 10)
 
     def _pixel_callback(self, msg: Point):
         self.object_x = msg.x # object center in pixels
