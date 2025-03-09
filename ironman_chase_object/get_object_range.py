@@ -67,23 +67,42 @@ class GetObjectRangeNode(Node):
         angle_deg = pix_error * self.angle_per_pixel
         angle_rad = math.radians(angle_deg)
 
-        if angle_rad >=0:
-            index = int(angle_deg)
-        else: 
-            index = int(angle_deg + 360)
+        if pix_error < 0:
+            angle_rad = math.radians(angle_deg) + (2 * math.pi)
 
-        if 0 <= index < len(scan_msg.ranges):
-            distance = scan_msg.ranges[index]
-        else:
-            distance = float('inf') 
-            self.get_logger().warn(f"target angle {angle_rad} is not between {scan_msg.angle_min} and {scan_msg.angle_max}")
+        # Find the indices within +/- 0.2 rad
+        min_angle = angle_rad - 0.2
+        max_angle = angle_rad + 0.2
 
-        out_msg = Point()
-        out_msg.x = angle_rad
-        out_msg.y = distance
-        out_msg.z = 0.0
+        indices = [i for i in range(len(scan_msg.ranges)) 
+                   if scan_msg.angle_min + i * scan_msg.angle_increment >= min_angle 
+                   and scan_msg.angle_min + i * scan_msg.angle_increment <= max_angle]
+        print(indices)
+        # Get the average distance
+        valid_ranges = [scan_msg.ranges[i] for i in indices if scan_msg.ranges[i] > 0.0]
+        
+        if valid_ranges:
+            distance = sum(valid_ranges) / len(valid_ranges)
+            point = Point()
+            point.y = distance
+            self.object_distance_pub.publish(point)      
+        
+ 
+        # else: 
+        #     index = int(angle_deg + 360)
 
-        self.object_distance_pub.publish(out_msg)
+        # if 0 <= index < len(scan_msg.ranges):
+        #     distance = scan_msg.ranges[index]
+        # else:
+        #     distance = float('inf') 
+        #     self.get_logger().warn(f"target angle {angle_rad} is not between {scan_msg.angle_min} and {scan_msg.angle_max}")
+
+        # out_msg = Point()
+        # out_msg.x = angle_rad
+        # out_msg.y = distance
+        # out_msg.z = 0.0
+
+        # self.object_distance_pub.publish(out_msg)
 
         # if scan_msg.angle_min <= target_angle <= scan_msg.angle_max: 
         #     index = int((target_angle - scan_msg.angle_min)/scan_msg.angle_increment)
