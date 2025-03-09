@@ -87,6 +87,7 @@ class VelocityController(Node):
             twist = Twist()
             twist.linear.x = 0.5
             print(distance)
+        self._vel_publish.publish(twist)
         
     def check_timeout(self): 
         """Stop rotation if no new message is received for `timeout_duration` seconds."""
