@@ -73,7 +73,7 @@ class GetObjectRangeNode(Node):
 
         # new 
         angle_rad = math.radians(angle_deg)
-        target_angle = angle_rad
+        target_angle = angle_rad % (2*math.pi)
 
         if scan_msg.angle_min <= target_angle <= scan_msg.angle_max: 
             index = int((target_angle - scan_msg.angle_min)/scan_msg.angle_increment)
@@ -81,6 +81,7 @@ class GetObjectRangeNode(Node):
             self.get_logger().warn(f"target angle {target_angle} is not between {scan_msg.angle_min} and {scan_msg.angle_max}")
             return 
         
+       
 
 
         # old
@@ -104,7 +105,8 @@ class GetObjectRangeNode(Node):
 
         #    Use geometry_msgs/Point where:
         out_msg = Point()
-        out_msg.x = math.radians(angle_deg_normalized)  # angle in radians
+        # out_msg.x = math.radians(angle_deg_normalized)  # angle in radians
+        out_msg.x = target_angle
         out_msg.y = distance
         out_msg.z = 0.0
 
