@@ -35,6 +35,12 @@ class VelocityController(Node):
         self.max_angular_speed = 1.0 
         self.dead_zone = 10  # Pixels within which we don't rotate
 
+        # Linear control parameters.
+        self.linear_Kp = 2  # Proportional gain for linear velocity
+        self.target_distance = 0.0762  # 3 inches in meters
+        self.max_linear_speed = 1.5
+
+
         # Initialize error tracking for PID.
         self.last_error = 0.0
         self.integral = 0.0
@@ -55,7 +61,7 @@ class VelocityController(Node):
         error = self.error
 
         twist = Twist()
-        twist.linear.x = 0.0
+        # twist.linear.x = 0.0
 
         dt = (current_time - self.last_update_time).nanoseconds / 1e9  # Time difference in seconds
         
@@ -85,8 +91,19 @@ class VelocityController(Node):
         if self.error is not None: 
             distance = out_msg.y
             twist = Twist()
-            twist.linear.x = 0.5
-            print(distance)
+
+            # Compute the distance error from target.
+            distance_error = distance - self.target_distance
+            twist.linear.x = max(min(self.linear_Kp * distance_error, self.max_linear_speed), -self.max_linear_speed)
+            print(f"Distance: {distance}, Distance Error: {distance_error}, Linear Velocity: {twist.linear.x}")
+            # Only move if outside the 3-inch zone.
+            # if abs(distance_error) > 0.00:  # Small buffer to avoid jitter
+                
+                # return
+            # else:
+            #     twist.linear.x = 0.0
+
+             
         self._vel_publish.publish(twist)
         
     def check_timeout(self): 
@@ -95,6 +112,7 @@ class VelocityController(Node):
         if time_since_last_msg > self.timeout_duration:
             twist = Twist()
             twist.angular.z = 0.0  # Stop rotation
+            twist.linear.x = 0.0  # Stop linear movement
             self._vel_publish.publish(twist)
 
 def main():
