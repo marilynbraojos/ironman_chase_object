@@ -84,6 +84,8 @@ class VelocityController(Node):
     def lidar_callback(self, out_msg: Point): 
         if self.error is not None: 
             distance = out_msg.y
+            twist = Twist()
+            twist.linear.x = 0.5
             print(distance)
         
     def check_timeout(self): 
