@@ -25,6 +25,8 @@ class VelocityController(Node):
         # Publisher for velocity commands.
         self._vel_publish = self.create_publisher(Twist, '/cmd_vel', 10)
 
+        self.error = None
+
         # PID gains for angular control.
         self.Kp = 0.005    # Proportional gain 
         self.Ki = 0.001    # Integral gain
@@ -48,7 +50,9 @@ class VelocityController(Node):
         self.last_msg_time = current_time  # Update last received message time
 
         # Calculate pixel error: msg.x = detected pixel, msg.y = center pixel.
-        error = msg.x - msg.y
+        self.error = msg.x - msg.y
+
+        error = self.error
 
         twist = Twist()
         twist.linear.x = 0.0
@@ -78,12 +82,9 @@ class VelocityController(Node):
         self._vel_publish.publish(twist)
 
     def lidar_callback(self, out_msg: Point): 
-        distance = out_msg.y
-
-        print(distance)
-        # self.get_logger().info(f"Angle min: {out_msg.angle_min} rad")
-        # self.get_logger().info(f"Angle max: {out_msg.angle_max} rad")
-
+        if self.error is not None: 
+            distance = out_msg.y
+            print(distance)
         
     def check_timeout(self): 
         """Stop rotation if no new message is received for `timeout_duration` seconds."""
