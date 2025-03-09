@@ -88,13 +88,13 @@ class GetObjectRangeNode(Node):
         # angle_deg_normalized = angle_deg % 360.0
         # index = int(angle_deg_normalized)
 
-        index = angle_deg_normalized
+        # index = angle_deg_normalized
 
         # Check that index is within LIDAR range array
         if 0 <= index < len(scan_msg.ranges):
             distance = scan_msg.ranges[index]
         else:
-            distance = float('inf')
+            distance = float('inf') 
 
         # Optional: Try checking neighboring indices if you're worried about off-by-one errors
         if distance == float('inf') and 0 <= index - 1 < len(scan_msg.ranges):
