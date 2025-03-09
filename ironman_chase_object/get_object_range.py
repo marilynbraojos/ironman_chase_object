@@ -19,8 +19,6 @@ class GetObjectRangeNode(Node):
     def __init__(self):        
         super().__init__('get_object_range_node')
 
-
-        # Declare parameters for camera properties
         self.declare_parameter('camera_fov_deg', 62.2)  # Horizontal field of view in degrees
         self.declare_parameter('image_width', 320)      # Image width in pixels
 
@@ -99,11 +97,11 @@ class GetObjectRangeNode(Node):
             distance = float('inf') 
 
         # Optional: Try checking neighboring indices if you're worried about off-by-one errors
-        if distance == float('inf') and 0 <= index - 1 < len(scan_msg.ranges):
-            distance = scan_msg.ranges[index - 1]
+        if distance == float('inf') and 0 <= index - 5 < len(scan_msg.ranges):
+            distance = scan_msg.ranges[index - 5]
 
-        if distance == float('inf') and 0 <= index + 1 < len(scan_msg.ranges):
-            distance = scan_msg.ranges[index + 1]
+        if distance == float('inf') and 0 <= index + 5 < len(scan_msg.ranges):
+            distance = scan_msg.ranges[index + 5]
 
         #    Use geometry_msgs/Point where:
         out_msg = Point()
