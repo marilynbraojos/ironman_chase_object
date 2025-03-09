@@ -22,7 +22,7 @@ class GetObjectRangeNode(Node):
 
         # Declare parameters for camera properties
         self.declare_parameter('camera_fov_deg', 62.2)  # Horizontal field of view in degrees
-        self.declare_parameter('image_width', 640)      # Image width in pixels
+        self.declare_parameter('image_width', 320)      # Image width in pixels
 
         # Fetch parameter values
         self.camera_fov_deg = self.get_parameter('camera_fov_deg').value
