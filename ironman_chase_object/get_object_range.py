@@ -66,7 +66,9 @@ class GetObjectRangeNode(Node):
         if self.object_x is None: 
             return 
         
-        pix_error = self.object_x - self.center_img
+        pix_error = self.object_x 
+
+        # pix_error = self.object_x - self.center_img
 
         # angular offset (if time: change angles - sean rec not use angles)
         angle_deg = pix_error * self.angle_per_pixel
