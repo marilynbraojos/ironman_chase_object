@@ -71,7 +71,20 @@ class GetObjectRangeNode(Node):
         # angular offset (if time: change angles - sean rec not use angles)
         angle_deg = pix_error * self.angle_per_pixel
 
-        angle_deg_normalized = angle_deg % 360.0
+        # new 
+        angle_rad = math.radians(angle_deg)
+        target_angle = angle_rad
+
+        if scan_msg.angle_min <= target_angle <= scan_msg.angle_max: 
+            index = int((target_angle - scan_msg.angle_min)/scan_msg.angle_increment)
+        else: 
+            self.get_logger().warn(f"target angle {target_angle} is not between {scan_msg.angle_min} and {scan_msg.angle_max}")
+            return 
+        
+
+
+        # old
+        # angle_deg_normalized = angle_deg % 360.0
         # index = int(angle_deg_normalized)
 
         index = angle_deg_normalized
@@ -83,11 +96,11 @@ class GetObjectRangeNode(Node):
             distance = float('inf')
 
         # Optional: Try checking neighboring indices if you're worried about off-by-one errors
-        if distance == float('inf') and 0 <= index - 0.5 < len(scan_msg.ranges):
-            distance = scan_msg.ranges[index - 0.5]
+        if distance == float('inf') and 0 <= index - 1 < len(scan_msg.ranges):
+            distance = scan_msg.ranges[index - 1]
 
-        if distance == float('inf') and 0 <= index + 0.5 < len(scan_msg.ranges):
-            distance = scan_msg.ranges[index + 0.5]
+        if distance == float('inf') and 0 <= index + 1 < len(scan_msg.ranges):
+            distance = scan_msg.ranges[index + 1]
 
         #    Use geometry_msgs/Point where:
         out_msg = Point()
