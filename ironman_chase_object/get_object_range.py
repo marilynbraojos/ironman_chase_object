@@ -62,9 +62,8 @@ class GetObjectRangeNode(Node):
     def _distance_callback(self, scan_msg: LaserScan):    
         if self.object_x is None: 
             return 
-        
 
-        pix_error = self.center_img - self.object_x
+        pix_error = self.object_x - self.center_img
         angle_deg = pix_error * self.angle_per_pixel
         angle_rad = math.radians(angle_deg)
 
