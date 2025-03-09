@@ -49,68 +49,73 @@ class GetObjectRangeNode(Node):
         self._lidar_subscriber = self.create_subscription(
             LaserScan,
             '/scan',
-            self._image_callback, 
+            self._distance_callback, 
             lidar_qos_profile)
         self._lidar_subscriber 
         
-        self._point_publish = self.create_publisher(Point, 'object_range', 10)
         self.object_distance_pub = self.create_publisher(Point, 'obj_dis', 10)
 
     def _pixel_callback(self, msg: Point):
         self.object_x = msg.x # object center in pixels
         self.center_img = msg.y # img center in pixels
 
-    def _image_callback(self, scan_msg: LaserScan):    
+    def _distance_callback(self, scan_msg: LaserScan):    
         if self.object_x is None: 
             return 
         
-        pix_error = self.object_x 
 
-        # pix_error = self.object_x - self.center_img
-
-        # angular offset (if time: change angles - sean rec not use angles)
+        pix_error = self.center_img - self.object_x
         angle_deg = pix_error * self.angle_per_pixel
-
-        # new 
         angle_rad = math.radians(angle_deg)
-        target_angle = angle_rad % (2*math.pi)
 
-        if scan_msg.angle_min <= target_angle <= scan_msg.angle_max: 
-            index = int((target_angle - scan_msg.angle_min)/scan_msg.angle_increment)
+        if angle_rad >=0:
+            index = int(angle_deg)
         else: 
-            self.get_logger().warn(f"target angle {target_angle} is not between {scan_msg.angle_min} and {scan_msg.angle_max}")
-            return 
-        
-       
+            index = int(angle_deg + 360)
 
-
-        # old
-        # angle_deg_normalized = angle_deg % 360.0
-        # index = int(angle_deg_normalized)
-
-        # index = angle_deg_normalized
-
-        # Check that index is within LIDAR range array
         if 0 <= index < len(scan_msg.ranges):
             distance = scan_msg.ranges[index]
         else:
             distance = float('inf') 
+            self.get_logger().warn(f"target angle {angle_rad} is not between {scan_msg.angle_min} and {scan_msg.angle_max}")
 
-        # Optional: Try checking neighboring indices if you're worried about off-by-one errors
-        if distance == float('inf') and 0 <= index - 5 < len(scan_msg.ranges):
-            distance = scan_msg.ranges[index - 5]
-
-        if distance == float('inf') and 0 <= index + 5 < len(scan_msg.ranges):
-            distance = scan_msg.ranges[index + 5]
-
-        #    Use geometry_msgs/Point where:
         out_msg = Point()
-        # out_msg.x = math.radians(angle_deg_normalized)  # angle in radians
-        out_msg.x = target_angle
+        out_msg.x = angle_rad
         out_msg.y = distance
         out_msg.z = 0.0
 
         self.object_distance_pub.publish(out_msg)
+
+        # if scan_msg.angle_min <= target_angle <= scan_msg.angle_max: 
+        #     index = int((target_angle - scan_msg.angle_min)/scan_msg.angle_increment)
+        # else: 
+        #     
+        #     return 
+        
+        # # old
+        # # angle_deg_normalized = angle_deg % 360.0
+        # # index = int(angle_deg_normalized)
+
+        # # index = angle_deg_normalized
+
+        # # Check that index is within LIDAR range array
+        # 
+        #    
+        # # Optional: Try checking neighboring indices if you're worried about off-by-one errors
+        # if distance == float('inf') and 0 <= index - 5 < len(scan_msg.ranges):
+        #     distance = scan_msg.ranges[index - 5]
+
+        # if distance == float('inf') and 0 <= index + 5 < len(scan_msg.ranges):
+        #     distance = scan_msg.ranges[index + 5]
+
+        # #    Use geometry_msgs/Point where:
+        # 
+        # # out_msg.x = math.radians(angle_deg_normalized)  # angle in radians
+        # out_msg.x = target_angle
+        # out_msg.y = distance
+        # out_msg.z = 0.0
+
+        # self.object_distance_pub.publish(out_msg)
 
 def main():
     rclpy.init()
