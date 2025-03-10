@@ -58,7 +58,7 @@ class GetObjectRangeNode(Node):
         if self.object_x is None: 
             return 
 
-        pix_error = self.object_x - self.center_img
+        pix_error = self.center_img - self.object_x
         angle_deg = pix_error * self.angle_per_pixel
         angle_rad = math.radians(angle_deg)
 
