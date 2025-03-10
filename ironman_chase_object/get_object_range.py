@@ -79,6 +79,7 @@ class GetObjectRangeNode(Node):
         if valid_ranges:
             distance = statistics.median(valid_ranges)
             point = Point()
+            point.x = -pix_error
             point.y = distance
             self.object_distance_publisher.publish(point)      
 
