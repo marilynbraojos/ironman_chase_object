@@ -34,12 +34,12 @@ class VelocityController(Node):
         self.dead_zone = 20  # Pixels within which we don't rotate
 
         # Linear control parameters. --- tuning now
-        self.linear_Kp = 0.5  # Proportional gain for linear velocity
-        self.linear_Ki = 0.001
-        self.linear_Kd = 0.001
+        self.linear_Kp = 0.8  # Proportional gain for linear velocity
+        self.linear_Ki = 0.00
+        self.linear_Kd = 0.00
         
         self.target_distance = 0.3  # [m]
-        self.max_linear_speed = 1
+        self.max_linear_speed = 3
 
         # Initialize error tracking for angular PID. - done using
         self.last_error = 0.0
@@ -96,45 +96,38 @@ class VelocityController(Node):
         self._vel_publish.publish(twist)
 
     def lidar_callback(self, out_msg: Point): 
+        current_time = self.get_clock().now()
+        twist = Twist() 
 
+        distance = out_msg.y 
+        distance_error = distance - self.target_distance
 
+        dt = (current_time-self.last_update_time).nanoseconds / 1e9
 
-        print("test")
-        # twist = Twist()
-        # current_time = self.get_clock().now()
-    
+        if dt > 0.0:
+            # Linear PID control
+            self.linear_integral += distance_error * dt
+            linear_derivative = (distance_error - self.last_linear_error) / dt
 
-        # if self.error is not None: 
-        #     distance = out_msg.y
+            # PID control for linear velocity
+            control = (self.linear_Kp * distance_error +
+                        self.linear_Ki * self.linear_integral +
+                        self.linear_Kd * linear_derivative)
+            
+            # Clamp the linear velocity
+            twist.linear.x = max(min(control, self.max_linear_speed), -self.max_linear_speed)
 
-        #     # Compute the distance error from target.
-        #     distance_error = distance - self.target_distance
+            # Update error for next iteration.
+            self.last_linear_error = distance_error
+            self.last_linear_update_time = current_time
+        else:
+            twist.linear.x = 0.0  # Stop movement if there's no significant error
 
-        #     dt = (current_time - self.last_update_time).nanoseconds / 1e9  # Time difference for linear control
-        #     if dt > 0.0:
-        #         # Accumulate linear I
-        #         self.linear_integral += distance_error * dt
-        #         # derivative term for linear control
-        #         linear_derivative = (distance_error - self.last_linear_error) / dt
+        # Print the distance and error for debugging.
+        print(f"Distance: {distance}, Distance Error: {distance_error}, Linear Velocity: {twist.linear.x}")
 
-        #         # Compute the full PID control output for linear velocity
-        #         control = (self.linear_Kp * distance_error +
-        #                    self.linear_Ki * self.linear_integral +
-        #                    self.linear_Kd * linear_derivative)
-                
-        #         # Clamp the linear velocity
-        #         twist.linear.x = float(max(min(control, self.max_linear_speed), -self.max_linear_speed))
-
-        #         # Update error for next iteration.
-        #         self.last_linear_error = distance_error
-        #         self.last_update_time = current_time
-        #     else:
-        #         twist.linear.x = 0.0
-
-        #     # twist.linear.x = max(min(self.linear_Kp * distance_error, self.max_linear_speed), -self.max_linear_speed)
-        #     print(f"Distance: {distance}, Distance Error: {distance_error}, Linear Velocity: {twist.linear.x}")
-
-        # self._vel_publish.publish(twist)
+        # Publish the twist message to the velocity publisher.
+        self._vel_publish.publish(twist)
         
     def check_timeout(self): 
         """Stop movement if no new message is received for timeout_duration seconds."""
