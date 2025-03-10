@@ -91,6 +91,7 @@ class GetObjectRangeNode(Node):
         self.get_logger().info(f"Median distance: {distance} m")
         self.get_logger().info(f"Min Range: {scan_msg.range_min} m")
         self.get_logger().info(f"Max Range: {scan_msg.range_max} m")
+        self.get_logger().info(f"Ranges: {scan_msg.ranges} m")
 
 
     def _check_timeout(self):
