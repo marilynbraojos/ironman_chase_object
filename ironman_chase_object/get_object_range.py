@@ -52,7 +52,6 @@ class GetObjectRangeNode(Node):
     def _pixel_callback(self, msg: Point):
         self.object_x = msg.x # object center in pixels
         self.center_img = msg.y # img center in pixels
-        self.get_logger().info(f"Received detected pixel: x-pixel location = {self.object_x}, center img pixel location = {self.center_img}")
         self.last_update_time = self.get_clock().now()
 
     def _distance_callback(self, scan_msg: LaserScan):    
