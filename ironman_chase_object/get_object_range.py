@@ -9,7 +9,7 @@ from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Point
 
 import math
-
+import statistics
 
 class GetObjectRangeNode(Node):
 
@@ -72,23 +72,23 @@ class GetObjectRangeNode(Node):
         indices = [i for i in range(len(scan_msg.ranges)) 
                    if scan_msg.angle_min + i * scan_msg.angle_increment >= min_angle 
                    and scan_msg.angle_min + i * scan_msg.angle_increment <= max_angle]
-        print(indices)
+                
         # Get the average distance
         valid_ranges = [scan_msg.ranges[i] for i in indices if scan_msg.ranges[i] > 0.0]
         
         if valid_ranges:
-            distance = sum(valid_ranges) / len(valid_ranges)
+            distance = statistics.median(valid_ranges)
             point = Point()
             point.y = distance
             self.object_distance_publisher.publish(point)      
 
-        # debug :((
+        # Debugging
         self.get_logger().info(f"pix_error: {pix_error}")
         self.get_logger().info(f"angle_deg: {angle_deg}")
         self.get_logger().info(f"angle_rad: {angle_rad}")
         self.get_logger().info(f"Indices in window: {indices}")
-        raw_distances = [scan_msg.ranges[i] for i in indices if scan_msg.ranges[i] > 0.0]
-        self.get_logger().info(f"Raw distances: {raw_distances}")
+        self.get_logger().info(f"Raw distances: {valid_ranges} m")
+        self.get_logger().info(f"Median distance: {distance} m")
 
     def _check_timeout(self):
         if (self.get_clock().now() - self.last_update_time).nanoseconds > 2e9:  # 2 seconds
