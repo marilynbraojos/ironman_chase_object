@@ -15,12 +15,12 @@ class VelocityController(Node):
         self._pixel_subscriber 
 
         # Subscribe to the object distance topic.
-        self.dis_subscriber = self.create_subscription(
+        self.distance_subscriber = self.create_subscription(
             Point,
-            'obj_dis',
+            'detected_distance',
             self.lidar_callback, 
             10)
-        self.dis_subscriber 
+        self.distance_subscriber 
         
         # Publisher for velocity commands.
         self._vel_publish = self.create_publisher(Twist, '/cmd_vel', 10)

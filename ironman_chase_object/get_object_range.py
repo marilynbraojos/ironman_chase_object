@@ -47,7 +47,7 @@ class GetObjectRangeNode(Node):
             lidar_qos_profile)
         self._lidar_subscriber 
         
-        self.object_distance_publisher = self.create_publisher(Point, 'obj_dis', 10)
+        self.object_distance_publisher = self.create_publisher(Point, 'detected_distance', 10)
 
     def _pixel_callback(self, msg: Point):
         self.object_x = msg.x # object center in pixels
