@@ -34,12 +34,12 @@ class VelocityController(Node):
         self.dead_zone = 20  # Pixels within which we don't rotate
 
         # Linear control parameters. --- tuning now
-        self.linear_Kp = 0.8  # Proportional gain for linear velocity
+        self.linear_Kp = 0.5  # Proportional gain for linear velocity
         self.linear_Ki = 0.00
         self.linear_Kd = 0.00
         
-        self.target_distance = 0.3  # [m]
-        self.max_linear_speed = 3
+        self.target_distance = 0.1  # [m]
+        self.max_linear_speed = 1 # [should be .1 m/s]
 
         # Initialize error tracking for angular PID. - done using
         self.last_error = 0.0
@@ -131,7 +131,7 @@ class VelocityController(Node):
         
     def check_timeout(self): 
         """Stop movement if no new message is received for timeout_duration seconds."""
-        time_since_last_msg = (self.get_clock().now() - self.last_msg_time).nanoseconds / 1e9  # Convert to seconds
+        time_since_last_msg = (self.get_clock().now() - self.last_msg_time).nanoseconds / 1  # Convert to seconds
         if time_since_last_msg > self.timeout_duration:
             twist = Twist()
             twist.angular.z = 0.0  # Stop rotation
