@@ -34,12 +34,12 @@ class VelocityController(Node):
         self.dead_zone = 20  # Pixels within which we don't rotate
 
         # Linear control parameters. --- tuning now
-        self.linear_Kp = 0.5  # Proportional gain for linear velocity
-        self.linear_Ki = 0.00
-        self.linear_Kd = 0.00
+        self.linear_Kp = 0.5 # Proportional gain for linear velocity
+        self.linear_Ki = 0.01
+        self.linear_Kd = 0.001
         
-        self.target_distance = 0.1  # [m]
-        self.max_linear_speed = 1 # [should be .1 m/s]
+        self.target_distance = 0.45  # [m]
+        self.max_linear_speed = 2 # [should be .1 m/s]
 
         # Initialize error tracking for angular PID. - done using
         self.last_error = 0.0
@@ -102,7 +102,7 @@ class VelocityController(Node):
         distance = out_msg.y 
         distance_error = distance - self.target_distance
 
-        dt = (current_time-self.last_update_time).nanoseconds / 1e9
+        dt = (current_time-self.last_linear_update_time).nanoseconds / 1e9 # updated to linear time
 
         if dt > 0.0:
             # Linear PID control
@@ -115,7 +115,7 @@ class VelocityController(Node):
                         self.linear_Kd * linear_derivative)
             
             # Clamp the linear velocity
-            twist.linear.x = max(min(control, self.max_linear_speed), -self.max_linear_speed)
+            twist.linear.x = float(max(min(control, self.max_linear_speed), -self.max_linear_speed))
 
             # Update error for next iteration.
             self.last_linear_error = distance_error
