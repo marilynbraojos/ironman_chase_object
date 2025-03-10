@@ -95,7 +95,7 @@ class GetObjectRangeNode(Node):
 
 
     def _check_timeout(self):
-        if (self.get_clock().now() - self.last_update_time).nanoseconds > 1e-9:  # [ns]
+        if (self.get_clock().now() - self.last_update_time).nanoseconds > 1:  # [ns]
             if self.object_x is not None:
                 self.get_logger().info("No new object location detected — resetting.")
                 self.object_x = None
