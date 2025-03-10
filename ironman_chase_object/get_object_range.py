@@ -6,11 +6,8 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy
 
 from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Twist, Point
+from geometry_msgs.msg import Point
 
-import cv2
-from cv_bridge import CvBridge
-import numpy as np
 import math
 
 
