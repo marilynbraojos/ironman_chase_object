@@ -25,15 +25,15 @@ class VelocityController(Node):
         # Publisher for velocity commands.
         self._vel_publish = self.create_publisher(Twist, '/cmd_vel', 10)
 
-        # PID gains for angular control.
-        self.Kp = 0.005    # Proportional gain 
-        self.Ki = 0.001    # Integral gain
-        self.Kd = 0.001    # Derivative gain
+        # PID gains for angular control. - done using 
+        self.Kp = 0.005    # Proportional gain [tuned]
+        self.Ki = 0.001    # Integral gain [tuned]
+        self.Kd = 0.001    # Derivative gain [tuned]
 
         self.max_angular_speed = 1.0 
-        self.dead_zone = 30  # Pixels within which we don't rotate
+        self.dead_zone = 20  # Pixels within which we don't rotate
 
-        # Linear control parameters.
+        # Linear control parameters. --- tuning now
         self.linear_Kp = 0.5  # Proportional gain for linear velocity
         self.linear_Ki = 0.001
         self.linear_Kd = 0.001
@@ -41,12 +41,12 @@ class VelocityController(Node):
         self.target_distance = 0.3  # [m]
         self.max_linear_speed = 1
 
-        # Initialize error tracking for angular PID.
+        # Initialize error tracking for angular PID. - done using
         self.last_error = 0.0
         self.integral = 0.0
         self.last_update_time = self.get_clock().now()
 
-        # Initialize error tracking for linear PID.
+        # Initialize error tracking for linear PID. --- tuning now 
         self.last_linear_error = 0.0
         self.linear_integral = 0.0
         self.last_linear_update_time = self.get_clock().now()
@@ -62,17 +62,17 @@ class VelocityController(Node):
 
         self.object_x = msg.x # object center in pixels
         self.center_img = msg.y # img center in pixels
-        pix_error = self.center_img - self.object_x
+        pix_error = self.object_x - self.center_img
         
         twist = Twist()
 
-        dt = (current_time - self.last_update_time).nanoseconds / 1 # Time difference in seconds
+        dt = (current_time-self.last_update_time).nanoseconds / 1e9 # Time difference in seconds
         
         # Only compute PID if the error exceeds the dead zone.
         if abs(pix_error) > self.dead_zone and dt > 0.0:
             
             # Accumulate the integral term.
-            self.integral += pix_error * dt
+            self.integral += (pix_error) * dt
             
             # Compute the derivative term.
             derivative = (pix_error - self.last_error) / dt
@@ -96,6 +96,9 @@ class VelocityController(Node):
         self._vel_publish.publish(twist)
 
     def lidar_callback(self, out_msg: Point): 
+
+
+
         print("test")
         # twist = Twist()
         # current_time = self.get_clock().now()
