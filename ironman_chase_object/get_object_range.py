@@ -89,6 +89,9 @@ class GetObjectRangeNode(Node):
         self.get_logger().info(f"Indices in window: {indices}")
         self.get_logger().info(f"Raw distances: {valid_ranges} m")
         self.get_logger().info(f"Median distance: {distance} m")
+        self.get_logger().info(f"Min Range: {scan_msg.range_min} m")
+        self.get_logger().info(f"Max Range: {scan_msg.range_max} m")
+
 
     def _check_timeout(self):
         if (self.get_clock().now() - self.last_update_time).nanoseconds > 2e9:  # 2 seconds
