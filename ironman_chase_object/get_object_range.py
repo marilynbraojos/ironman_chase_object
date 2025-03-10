@@ -58,6 +58,7 @@ class GetObjectRangeNode(Node):
     def _pixel_callback(self, msg: Point):
         self.object_x = msg.x # object center in pixels
         self.center_img = msg.y # img center in pixels
+        #self.get_logger().info(f"Received detected pixel: object_x = {self.object_x}, center_img = {self.center_img}")
 
     def _distance_callback(self, scan_msg: LaserScan):    
         if self.object_x is None: 
@@ -71,8 +72,8 @@ class GetObjectRangeNode(Node):
             angle_rad = math.radians(angle_deg) + (2 * math.pi)
 
         # Find the indices within +/- 0.2 rad
-        min_angle = angle_rad - 0.2
-        max_angle = angle_rad + 0.2
+        min_angle = angle_rad - 0.1
+        max_angle = angle_rad + 0.1
 
         indices = [i for i in range(len(scan_msg.ranges)) 
                    if scan_msg.angle_min + i * scan_msg.angle_increment >= min_angle 
@@ -86,7 +87,15 @@ class GetObjectRangeNode(Node):
             point = Point()
             point.y = distance
             self.object_distance_pub.publish(point)      
-        
+
+        # debug :((
+        self.get_logger().info(f"pix_error: {pix_error}")
+        self.get_logger().info(f"angle_deg: {angle_deg}")
+        self.get_logger().info(f"angle_rad: {angle_rad}")
+        self.get_logger().info(f"Indices in window: {indices}")
+        raw_distances = [scan_msg.ranges[i] for i in indices if scan_msg.ranges[i] > 0.0]
+        self.get_logger().info(f"Raw distances: {raw_distances}")
+
  
         # else: 
         #     index = int(angle_deg + 360)

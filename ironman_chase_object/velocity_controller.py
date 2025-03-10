@@ -1,6 +1,5 @@
 import rclpy
 from rclpy.node import Node
-from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy
 from geometry_msgs.msg import Twist, Point
 
 class VelocityController(Node):
@@ -15,6 +14,7 @@ class VelocityController(Node):
             10)
         self._pixel_subscriber 
 
+        # Subscribe to the object distance topic.
         self.dis_subscriber = self.create_subscription(
             Point,
             'obj_dis',
@@ -40,7 +40,6 @@ class VelocityController(Node):
         self.target_distance = 0.0762  # 3 inches in meters
         self.max_linear_speed = 1.5
 
-
         # Initialize error tracking for PID.
         self.last_error = 0.0
         self.integral = 0.0
@@ -57,11 +56,9 @@ class VelocityController(Node):
 
         # Calculate pixel error: msg.x = detected pixel, msg.y = center pixel.
         self.error = msg.x - msg.y
-
         error = self.error
 
         twist = Twist()
-        # twist.linear.x = 0.0
 
         dt = (current_time - self.last_update_time).nanoseconds / 1e9  # Time difference in seconds
         
@@ -88,26 +85,19 @@ class VelocityController(Node):
         self._vel_publish.publish(twist)
 
     def lidar_callback(self, out_msg: Point): 
+        twist = Twist()
         if self.error is not None: 
             distance = out_msg.y
-            twist = Twist()
 
             # Compute the distance error from target.
             distance_error = distance - self.target_distance
             twist.linear.x = max(min(self.linear_Kp * distance_error, self.max_linear_speed), -self.max_linear_speed)
             print(f"Distance: {distance}, Distance Error: {distance_error}, Linear Velocity: {twist.linear.x}")
-            # Only move if outside the 3-inch zone.
-            # if abs(distance_error) > 0.00:  # Small buffer to avoid jitter
-                
-                # return
-            # else:
-            #     twist.linear.x = 0.0
 
-             
         self._vel_publish.publish(twist)
         
     def check_timeout(self): 
-        """Stop rotation if no new message is received for `timeout_duration` seconds."""
+        """Stop movement if no new message is received for timeout_duration seconds."""
         time_since_last_msg = (self.get_clock().now() - self.last_msg_time).nanoseconds / 1e9  # Convert to seconds
         if time_since_last_msg > self.timeout_duration:
             twist = Twist()
