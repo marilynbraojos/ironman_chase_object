@@ -6,33 +6,25 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy
 
 from sensor_msgs.msg import LaserScan
-from geometry_msgs.msg import Twist, Point
+from geometry_msgs.msg import Point
 
-import cv2
-from cv_bridge import CvBridge
-import numpy as np
 import math
-
+import statistics
 
 class GetObjectRangeNode(Node):
 
     def __init__(self):        
         super().__init__('get_object_range_node')
 
-
-        # Declare parameters for camera properties
-        self.declare_parameter('camera_fov_deg', 62.2)  # Horizontal field of view in degrees
-        self.declare_parameter('image_width', 640)      # Image width in pixels
-
-        # Fetch parameter values
-        self.camera_fov_deg = self.get_parameter('camera_fov_deg').value
-        self.image_width = self.get_parameter('image_width').value
-
-        # Calculate how many degrees each pixel represents (very rough approximation)
-        self.angle_per_pixel = self.camera_fov_deg / float(self.image_width)
+        self.camera_fov_deg = 62.2 # camera's fov [deg]
+        self.image_width = 320 # image width [pixels]
+        self.angle_per_pixel = self.camera_fov_deg / self.image_width 
 
         self.object_x = None
         self.center_img = None
+
+        self.last_update_time = self.get_clock().now()
+        self.create_timer(1.0, self._check_timeout)  # Check every second
 
         lidar_qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
@@ -51,51 +43,63 @@ class GetObjectRangeNode(Node):
         self._lidar_subscriber = self.create_subscription(
             LaserScan,
             '/scan',
-            self._image_callback, 
+            self._distance_callback, 
             lidar_qos_profile)
         self._lidar_subscriber 
         
-        self._point_publish = self.create_publisher(Point, 'object_range', 10)
-        self.object_distance_pub = self.create_publisher(Point, 'obj_dis', 10)
+        self.object_distance_publisher = self.create_publisher(Point, 'detected_distance', 10)
 
     def _pixel_callback(self, msg: Point):
         self.object_x = msg.x # object center in pixels
         self.center_img = msg.y # img center in pixels
+        self.last_update_time = self.get_clock().now()
 
-    def _image_callback(self, scan_msg: LaserScan):    
+    def _distance_callback(self, scan_msg: LaserScan):    
         if self.object_x is None: 
             return 
-        
-        pix_error = self.object_x - self.center_img
 
-        # angular offset (if time: change angles - sean rec not use angles)
+        pix_error = self.center_img - self.object_x
         angle_deg = pix_error * self.angle_per_pixel
+        angle_rad = math.radians(angle_deg)
 
-        angle_deg_normalized = angle_deg % 360.0
-        # index = int(angle_deg_normalized)
+        if pix_error < 0:
+            angle_rad = math.radians(angle_deg) + (2 * math.pi)
 
-        index = angle_deg_normalized
+        # Find the indices within +/- 0.2 rad
+        min_angle = angle_rad - 0.1
+        max_angle = angle_rad + 0.1
 
-        # Check that index is within LIDAR range array
-        if 0 <= index < len(scan_msg.ranges):
-            distance = scan_msg.ranges[index]
-        else:
-            distance = float('inf')
+        indices = [i for i in range(len(scan_msg.ranges)) 
+                   if scan_msg.angle_min + i * scan_msg.angle_increment >= min_angle 
+                   and scan_msg.angle_min + i * scan_msg.angle_increment <= max_angle]
+                
+        # Get the average distance
+        valid_ranges = [scan_msg.ranges[i] for i in indices if scan_msg.ranges[i] > 0.0]
+        
+        if valid_ranges:
+            distance = statistics.median(valid_ranges)
+            point = Point()
+            point.x = -pix_error
+            point.y = distance
+            self.object_distance_publisher.publish(point)      
 
-        # Optional: Try checking neighboring indices if you're worried about off-by-one errors
-        if distance == float('inf') and 0 <= index - 0.5 < len(scan_msg.ranges):
-            distance = scan_msg.ranges[index - 0.5]
+        # Debugging
+        self.get_logger().info(f"pix_error: {pix_error}")
+        self.get_logger().info(f"angle_deg: {angle_deg}")
+        self.get_logger().info(f"angle_rad: {angle_rad}")
+        self.get_logger().info(f"Indices in window: {indices}")
+        self.get_logger().info(f"Raw distances: {valid_ranges} m")
+        self.get_logger().info(f"Median distance: {distance} m")
+        # self.get_logger().info(f"Min Range: {scan_msg.range_min} m")
+        # self.get_logger().info(f"Max Range: {scan_msg.range_max} m")
+        # self.get_logger().info(f"Ranges: {scan_msg.ranges} m")
 
-        if distance == float('inf') and 0 <= index + 0.5 < len(scan_msg.ranges):
-            distance = scan_msg.ranges[index + 0.5]
 
-        #    Use geometry_msgs/Point where:
-        out_msg = Point()
-        out_msg.x = math.radians(angle_deg_normalized)  # angle in radians
-        out_msg.y = distance
-        out_msg.z = 0.0
-
-        self.object_distance_pub.publish(out_msg)
+    def _check_timeout(self):
+        if (self.get_clock().now() - self.last_update_time).nanoseconds > 1:  # [ns]
+            if self.object_x is not None:
+                self.get_logger().info("No new object location detected — resetting.")
+                self.object_x = None
 
 def main():
     rclpy.init()
