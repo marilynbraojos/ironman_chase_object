@@ -22,6 +22,7 @@ setup(
         'console_scripts': [
             'object_detection_node=ironman_chase_object.object_detection_node:main',
             'view_image_raw=ironman_chase_object.view_image_raw:main',
+            'get_object_range=ironman_chase_object.get_object_range:main',
             'velocity_controller=ironman_chase_object.velocity_controller:main',
         ],
     },
