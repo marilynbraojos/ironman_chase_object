@@ -24,7 +24,7 @@ class GetObjectRangeNode(Node):
         self.center_img = None
 
         self.last_update_time = self.get_clock().now()
-        self.create_timer(1.0, self._check_timeout)  # Check every second
+        self.create_timer(1.0, self._check_timeout) 
 
         lidar_qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.BEST_EFFORT,
@@ -65,7 +65,7 @@ class GetObjectRangeNode(Node):
         if pix_error < 0:
             angle_rad = math.radians(angle_deg) + (2 * math.pi)
 
-        # Find the indices within +/- 0.2 rad
+        # find the indices within +/- [rad]
         min_angle = angle_rad - 0.1
         max_angle = angle_rad + 0.1
 
@@ -73,7 +73,7 @@ class GetObjectRangeNode(Node):
                    if scan_msg.angle_min + i * scan_msg.angle_increment >= min_angle 
                    and scan_msg.angle_min + i * scan_msg.angle_increment <= max_angle]
                 
-        # Get the average distance
+        # valid poss distances
         valid_ranges = [scan_msg.ranges[i] for i in indices if scan_msg.ranges[i] > 0.0]
         
         if valid_ranges:
@@ -83,7 +83,6 @@ class GetObjectRangeNode(Node):
             point.y = distance
             self.object_distance_publisher.publish(point)      
 
-        # Debugging
         self.get_logger().info(f"pix_error: {pix_error}")
         self.get_logger().info(f"angle_deg: {angle_deg}")
         self.get_logger().info(f"angle_rad: {angle_rad}")
